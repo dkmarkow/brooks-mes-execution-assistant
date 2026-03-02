@@ -1560,8 +1560,23 @@ plot(bullScoreSignal - (
  bullScore_angleBoost +
  bullScore_angleClimax +
  bullScore_reject +
- bullScore_ibs
+ bullScore_ibs +
+ bullScore_followThrough_sig
  ), title="Bull Hidden Penalties", display=display.data_window)
+
+plot(bearScoreSignal - (
+ bearScore_trend +
+ bearScore_signal +
+ bearScore_size +
+ bearScore_location +
+ bearScore_leg +
+ bearScore_dominant +
+ bearScore_angleBoost +
+ bearScore_angleClimax +
+ bearScore_reject +
+ bearScore_ibs +
+ bearScore_followThrough_sig
+ ), title="Bear Hidden Penalties", display=display.data_window)
 
 // ===== ALERTS USING alert() INSTEAD =====
 
