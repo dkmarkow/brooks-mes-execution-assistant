@@ -419,6 +419,39 @@ strongBearBreakout = bearBreakout and bearTrendStrength
 var label[] bullLabels = array.new_label()
 var label[] bearLabels = array.new_label()
 
+// =====================================
+// BULL BEAR COMPONENT STORAGE ARRAYS
+// =====================================
+var int[] bullTrendArr = array.new_int()
+var int[] bullSignalArr = array.new_int()
+var int[] bullSizeArr = array.new_int()
+var int[] bullLocationArr = array.new_int()
+var int[] bullLegArr = array.new_int()
+var int[] bullDominantArr = array.new_int()
+var int[] bullAngleBoostArr = array.new_int()
+var int[] bullAngleClimaxArr = array.new_int()
+var int[] bullWeakArr = array.new_int()
+var int[] bullRejectArr = array.new_int()
+var int[] bullIBSArr = array.new_int()
+var int[] bullRangePenaltyArr = array.new_int()
+var int[] bullRangeQualityArr = array.new_int()
+var int[] bullFTArr = array.new_int()
+
+var int[] bearTrendArr = array.new_int()
+var int[] bearSignalArr = array.new_int()
+var int[] bearSizeArr = array.new_int()
+var int[] bearLocationArr = array.new_int()
+var int[] bearLegArr = array.new_int()
+var int[] bearDominantArr = array.new_int()
+var int[] bearAngleBoostArr = array.new_int()
+var int[] bearAngleClimaxArr = array.new_int()
+var int[] bearWeakArr = array.new_int()
+var int[] bearRejectArr = array.new_int()
+var int[] bearIBSArr = array.new_int()
+var int[] bearRangePenaltyArr = array.new_int()
+var int[] bearRangeQualityArr = array.new_int()
+var int[] bearFTArr = array.new_int()
+
 // FOLLOW THROUGH STORAGE V2
 
 
@@ -492,6 +525,8 @@ var int bearScore_angleBoost_sig = na
 var int bearScore_angleClimax_sig = na
 var int bearScore_weakPenalty_sig = na
 var int bearScore_rangePenalty_sig = na
+var int bullScore_rangeQualityPenalty_sig = na
+var int bearScore_rangeQualityPenalty_sig = na
 var int bearScore_reject_sig = na
 var int bearScore_ibs_sig = na
 
@@ -689,8 +724,7 @@ bullScore =
  bullScore_weakPenalty +
  bullScore_rangePenalty +
  bullScore_reject +
- bullScore_ibs +
- nz(bullScore_followThrough_sig)
+ bullScore_ibs 
 
 
 
@@ -737,8 +771,7 @@ bearScore =
  bearScore_weakPenalty +
  bearScore_rangePenalty +
  bearScore_reject +
- bearScore_ibs +
- nz(bearScore_followThrough_sig)
+ bearScore_ibs 
 
 
 // ---------- HYBRID PROBABILITY ENGINE ----------
@@ -872,27 +905,36 @@ if rangeEnvironment
     bearProb := bearProb * rangeProbCompression
 
 // =====================================
-// RANGE QUALITY PENALTY (CRITICAL FIX)
+// RANGE QUALITY PENALTY (TRACKED)
 // =====================================
+
+// Reset per bar
+bullScore_rangeQualityPenalty = 0
+bearScore_rangeQualityPenalty = 0
 
 if rangeScore >= 2
 
-    // Strong signals less reliable in ranges
+    // Bull penalties
 
     if bullSignalStrong
-        bullScore -= 1
-
-    if bearSignalStrong
-        bearScore -= 1
-
-
-    // EMA rejection less reliable
+        bullScore_rangeQualityPenalty -= 1
 
     if bullEMAReject or bullEMARejectStrong
-        bullScore -= 1
+        bullScore_rangeQualityPenalty -= 1
+
+    // Bear penalties
+
+    if bearSignalStrong
+        bearScore_rangeQualityPenalty -= 1
 
     if bearEMAReject or bearEMARejectStrong
-        bearScore -= 1
+        bearScore_rangeQualityPenalty -= 1
+
+
+// Apply to score
+
+bullScore += bullScore_rangeQualityPenalty
+bearScore += bearScore_rangeQualityPenalty
     
 // ---------- FINAL CLAMP ----------
 
@@ -1008,19 +1050,37 @@ if barstate.isconfirmed
         bullLocationGoodSignal := goodBullLocation[1]
         bullLocationBadSignal := badBullLocation[1]
 
-        bullScore_trend_sig := bullScore_trend
-        bullScore_signal_sig := bullScore_signal
-        bullScore_size_sig := bullScore_size
-        bullScore_location_sig := bullScore_location
-        bullScore_leg_sig := bullScore_leg
-        bullScore_dominant_sig := bullScore_dominant
-        bullScore_angleBoost_sig := bullScore_angleBoost
-        bullScore_angleClimax_sig := bullScore_angleClimax
-        bullScore_weakPenalty_sig := bullScore_weakPenalty
-        bullScore_rangePenalty_sig := bullScore_rangePenalty
-        bullScore_reject_sig := bullScore_reject
-        bullScore_ibs_sig := bullScore_ibs
+        bullScore_trend_sig := bullScore_trend [1]
+        bullScore_signal_sig := bullScore_signal [1]
+        bullScore_size_sig := bullScore_size [1]
+        bullScore_location_sig := bullScore_location [1]
+        bullScore_leg_sig := bullScore_leg [1]
+        bullScore_dominant_sig := bullScore_dominant [1]
+        bullScore_angleBoost_sig := bullScore_angleBoost [1]
+        bullScore_angleClimax_sig := bullScore_angleClimax [1]
+        bullScore_weakPenalty_sig := bullScore_weakPenalty [1]
+        bullScore_rangePenalty_sig := bullScore_rangePenalty [1]
+        bullScore_rangeQualityPenalty_sig := bullScore_rangeQualityPenalty [1]
+        bullScore_reject_sig := bullScore_reject [1]
+        bullScore_ibs_sig := bullScore_ibs [1] 
         bullFTProcessed := false
+
+        // STORE COMPONENTS IN ARRAYS (CRITICAL FIX)
+
+        array.push(bullTrendArr, bullScore_trend)
+        array.push(bullSignalArr, bullScore_signal)
+        array.push(bullSizeArr, bullScore_size)
+        array.push(bullLocationArr, bullScore_location)
+        array.push(bullLegArr, bullScore_leg)
+        array.push(bullDominantArr, bullScore_dominant)
+        array.push(bullAngleBoostArr, bullScore_angleBoost)
+        array.push(bullAngleClimaxArr, bullScore_angleClimax)
+        array.push(bullWeakArr, bullScore_weakPenalty)
+        array.push(bullRejectArr, bullScore_reject)
+        array.push(bullIBSArr, bullScore_ibs)
+        array.push(bullRangePenaltyArr, bullScore_rangePenalty)
+        array.push(bullRangeQualityArr, bullScore_rangeQualityPenalty)
+        array.push(bullFTArr, 0)
 
         // Remove candidate label
         label.delete(bullCandidateLabel)
@@ -1068,42 +1128,6 @@ if barstate.isconfirmed
                 array.shift(bullSignalGrades)
                 array.shift(bullSignalPrices)
              
-// BULL FOLLOW THROUGH EVALUATION
-
-
-// Only evaluate if signal exists
-if not na(bullSignalBarIndex)
-
-    ftBarIndex = bullSignalBarIndex + 1
-
-    if bar_index == ftBarIndex
-
-        ftBullBar =
-         close > open
-
-        ftStrongClose =
-         close >= high - (barRange * 0.25)
-
-        ftWeak =
-         math.abs(close - open) < (barRange * 0.30)
-
-        ftBearBar =
-         close < open
-
-        if ftBullBar and ftStrongClose
-            bullFollowThroughScore := 2
-
-        else if ftWeak
-            bullFollowThroughScore := -1
-
-        else if ftBearBar
-            bullFollowThroughScore := -3
-
-        else
-            bullFollowThroughScore := 0
-
-
-        bullScore_followThrough_sig := bullFollowThroughScore
 
     // =====================
     // BEAR SIGNAL FREEZE
@@ -1120,19 +1144,37 @@ if not na(bullSignalBarIndex)
         bearLocationGoodSignal := goodBearLocation[1]
         bearLocationBadSignal := badBearLocation[1]
 
-        bearScore_trend_sig := bearScore_trend
-        bearScore_signal_sig := bearScore_signal
-        bearScore_size_sig := bearScore_size
-        bearScore_location_sig := bearScore_location
-        bearScore_leg_sig := bearScore_leg
-        bearScore_dominant_sig := bearScore_dominant
-        bearScore_angleBoost_sig := bearScore_angleBoost
-        bearScore_angleClimax_sig := bearScore_angleClimax
-        bearScore_weakPenalty_sig := bearScore_weakPenalty
-        bearScore_rangePenalty_sig := bearScore_rangePenalty
-        bearScore_reject_sig := bearScore_reject
-        bearScore_ibs_sig := bearScore_ibs
+        bearScore_trend_sig := bearScore_trend [1]
+        bearScore_signal_sig := bearScore_signal [1]
+        bearScore_size_sig := bearScore_size [1]
+        bearScore_location_sig := bearScore_location [1]
+        bearScore_leg_sig := bearScore_leg [1]
+        bearScore_dominant_sig := bearScore_dominant [1]
+        bearScore_angleBoost_sig := bearScore_angleBoost [1]
+        bearScore_angleClimax_sig := bearScore_angleClimax [1]
+        bearScore_weakPenalty_sig := bearScore_weakPenalty [1]
+        bearScore_rangePenalty_sig := bearScore_rangePenalty [1]
+        bearScore_rangeQualityPenalty_sig := bearScore_rangeQualityPenalty [1]
+        bearScore_reject_sig := bearScore_reject [1]
+        bearScore_ibs_sig := bearScore_ibs [1]
         bearFTProcessed := false
+
+        // STORE COMPONENTS IN ARRAYS
+
+        array.push(bearTrendArr, bearScore_trend)
+        array.push(bearSignalArr, bearScore_signal)
+        array.push(bearSizeArr, bearScore_size)
+        array.push(bearLocationArr, bearScore_location)
+        array.push(bearLegArr, bearScore_leg)
+        array.push(bearDominantArr, bearScore_dominant)
+        array.push(bearAngleBoostArr, bearScore_angleBoost)
+        array.push(bearAngleClimaxArr, bearScore_angleClimax)
+        array.push(bearWeakArr, bearScore_weakPenalty)
+        array.push(bearRejectArr, bearScore_reject)
+        array.push(bearIBSArr, bearScore_ibs)
+        array.push(bearRangePenaltyArr, bearScore_rangePenalty)
+        array.push(bearRangeQualityArr, bearScore_rangeQualityPenalty)
+        array.push(bearFTArr, 0)
 
         label.delete(bearCandidateLabel)
 
@@ -1177,43 +1219,6 @@ if not na(bullSignalBarIndex)
                 array.shift(bearSignalProbs)
                 array.shift(bearSignalGrades)
                 array.shift(bearSignalPrices)
-
-
-// BEAR FOLLOW THROUGH EVALUATION
-
-
-if not na(bearSignalBarIndex)
-
-    ftBarIndex = bearSignalBarIndex + 1
-
-    if bar_index == ftBarIndex
-
-        ftBearBar =
-         close < open
-
-        ftStrongClose =
-         close <= low + (barRange * 0.25)
-
-        ftWeak =
-         math.abs(close - open) < (barRange * 0.30)
-
-        ftBullBar =
-         close > open
-
-        if ftBearBar and ftStrongClose
-            bearFollowThroughScore := 2
-
-        else if ftWeak
-            bearFollowThroughScore := -1
-
-        else if ftBullBar
-            bearFollowThroughScore := -3
-
-        else
-            bearFollowThroughScore := 0
-
-
-        bearScore_followThrough_sig := bearFollowThroughScore
 
 
 // =====================================
@@ -1274,11 +1279,17 @@ if barstate.isconfirmed
 
                 price = array.get(bullSignalPrices, i)
 
+                bullLabelText =
+                 "H" +
+                 (showGrades ? " " + grade : "") +
+                 (showScore ? " [" + str.tostring(score) + "]" : "") +
+                 (showProbability ? " " + str.tostring(math.round(prob)) + "%" : "")
+
                 newLabel =
                  label.new(
                   signalIndex,
                   price,
-                  "H " + grade + " " + str.tostring(prob) + "%",
+                  bullLabelText,
                   style=label.style_label_up,
                   color=color.new(color.blue, opacity),
                   textcolor=color.white,
@@ -1286,8 +1297,12 @@ if barstate.isconfirmed
 
                 array.set(bullLabels, i, newLabel)
                 array.set(bullSignalScores, i, score)
+                array.set(bullFTArr, i, ftScore)
                 array.set(bullSignalProbs, i, prob)
                 array.set(bullSignalGrades, i, grade)
+
+                bullScoreSignal := score
+                bullScore_followThrough_sig := ftScore
 
 
     // -------- BEAR FOLLOW THROUGH --------
@@ -1342,11 +1357,17 @@ if barstate.isconfirmed
 
                 price = array.get(bearSignalPrices, i)
 
+                bearLabelText =
+                 "L" +
+                 (showGrades ? " " + grade : "") +
+                 (showScore ? " [" + str.tostring(score) + "]" : "") +
+                 (showProbability ? " " + str.tostring(math.round(prob)) + "%" : "")
+
                 newLabel =
                  label.new(
                   signalIndex,
                   price,
-                  "L " + grade + " " + str.tostring(prob) + "%",
+                  bearLabelText,
                   style=label.style_label_down,
                   color=color.new(color.red, opacity),
                   textcolor=color.white,
@@ -1354,8 +1375,12 @@ if barstate.isconfirmed
 
                 array.set(bearLabels, i, newLabel)
                 array.set(bearSignalScores, i, score)
+                array.set(bearFTArr, i, ftScore)
                 array.set(bearSignalProbs, i, prob)
                 array.set(bearSignalGrades, i, grade)
+
+                bearScoreSignal := score
+                bearScore_followThrough_sig := ftScore
 
 // ---------- Reset markers ----------
 
@@ -1504,7 +1529,11 @@ plot(emaAngle, title="EMA Angle", display=display.data_window)
 // DATA WINDOW — BULL SCORE BREAKDOWN
 // =====================================
 
-plot(bullScoreSignal, "FINAL Bull Score (Frozen)", display=display.data_window)
+plot(
+ array.size(bullSignalScores) > 0 ?
+ array.get(bullSignalScores, array.size(bullSignalScores)-1) : na,
+ "FINAL Bull Score (Frozen)",
+ display=display.data_window)
 
 plot(bullScore_trend_sig, "Bull Trend", display=display.data_window)
 plot(bullScore_signal_sig, "Bull Signal", display=display.data_window)
@@ -1516,10 +1545,10 @@ plot(bullScore_angleBoost_sig, "Bull Angle Boost", display=display.data_window)
 plot(bullScore_angleClimax_sig, "Bull Angle Climax", display=display.data_window)
 plot(bullScore_weakPenalty_sig, "Bull Weak Penalty", display=display.data_window)
 plot(bullScore_rangePenalty_sig, "Bull Range Penalty", display=display.data_window)
+plot(bullScore_rangeQualityPenalty_sig, "Bull Range Quality Penalty", display=display.data_window)
 plot(bullScore_reject_sig, "Bull EMA Reject", display=display.data_window)
 plot(bullScore_ibs_sig, "Bull IBS", display=display.data_window)
 plot(bullScore_followThrough_sig, "Bull Follow Through", display=display.data_window)
-plot(array.size(bullSignalScores) > 0 ? array.get(bullSignalScores, array.size(bullSignalScores)-1) : na, "Bull Score (with FT)", display=display.data_window)
 
 
 
@@ -1527,7 +1556,11 @@ plot(array.size(bullSignalScores) > 0 ? array.get(bullSignalScores, array.size(b
 // DATA WINDOW — BEAR SCORE BREAKDOWN
 // =====================================
 
-plot(bearScoreSignal, "FINAL Bear Score (Frozen)", display=display.data_window)
+plot(
+ array.size(bearSignalScores) > 0 ?
+ array.get(bearSignalScores, array.size(bearSignalScores)-1) : na,
+ "FINAL Bear Score (Frozen)",
+ display=display.data_window)
 
 plot(bearScore_trend_sig, "Bear Trend", display=display.data_window)
 plot(bearScore_signal_sig, "Bear Signal", display=display.data_window)
@@ -1539,44 +1572,80 @@ plot(bearScore_angleBoost_sig, "Bear Angle Boost", display=display.data_window)
 plot(bearScore_angleClimax_sig, "Bear Angle Climax", display=display.data_window)
 plot(bearScore_weakPenalty_sig, "Bear Weak Penalty", display=display.data_window)
 plot(bearScore_rangePenalty_sig, "Bear Range Penalty", display=display.data_window)
+plot(bearScore_rangeQualityPenalty_sig, "Bear Range Quality Penalty", display=display.data_window)
 plot(bearScore_reject_sig, "Bear EMA Reject", display=display.data_window)
 plot(bearScore_ibs_sig, "Bear IBS", display=display.data_window)
 plot(bearScore_followThrough_sig, "Bear Follow Through", display=display.data_window)
-plot(bearScore_followThrough_sig, "Bear Follow Through", display=display.data_window)
-plot(array.size(bearSignalScores) > 0 ? array.get(bearSignalScores, array.size(bearSignalScores)-1) : na, "Bear Score (with FT)", display=display.data_window)
 
 
 
 plot(bullScoreSignal, title="SIGNAL Bull Score", display=display.data_window)
 plot(bearScoreSignal, title="SIGNAL Bear Score", display=display.data_window)
 
-plot(bullScoreSignal - (
- bullScore_trend +
- bullScore_signal +
- bullScore_size +
- bullScore_location +
- bullScore_leg +
- bullScore_dominant +
- bullScore_angleBoost +
- bullScore_angleClimax +
- bullScore_reject +
- bullScore_ibs +
- bullScore_followThrough_sig
- ), title="Bull Hidden Penalties", display=display.data_window)
+// =====================================
+// HIDDEN PENALTIES — TRUE CALCULATION (FIXED)
+// =====================================
 
-plot(bearScoreSignal - (
- bearScore_trend +
- bearScore_signal +
- bearScore_size +
- bearScore_location +
- bearScore_leg +
- bearScore_dominant +
- bearScore_angleBoost +
- bearScore_angleClimax +
- bearScore_reject +
- bearScore_ibs +
- bearScore_followThrough_sig
- ), title="Bear Hidden Penalties", display=display.data_window)
+// ---------- BULL ----------
+
+float bullHidden = na
+
+if array.size(bullSignalScores) > 0
+
+    last = array.size(bullSignalScores) - 1
+
+    bullHidden :=
+         array.get(bullSignalScores, last)
+         -
+         (
+             array.get(bullTrendArr, last) +
+             array.get(bullSignalArr, last) +
+             array.get(bullSizeArr, last) +
+             array.get(bullLocationArr, last) +
+             array.get(bullLegArr, last) +
+             array.get(bullDominantArr, last) +
+             array.get(bullAngleBoostArr, last) +
+             array.get(bullAngleClimaxArr, last) +
+             array.get(bullWeakArr, last) +
+             array.get(bullRejectArr, last) +
+             array.get(bullIBSArr, last) +
+             array.get(bullRangePenaltyArr, last) +
+             array.get(bullRangeQualityArr, last) +
+             array.get(bullFTArr, last)
+         )
+
+plot(bullHidden, title="Bull Hidden Penalties", display=display.data_window)
+
+
+// ---------- BEAR ----------
+
+float bearHidden = na
+
+if array.size(bearSignalScores) > 0
+
+    last = array.size(bearSignalScores) - 1
+
+    bearHidden :=
+         array.get(bearSignalScores, last)
+         -
+         (
+             array.get(bearTrendArr, last) +
+             array.get(bearSignalArr, last) +
+             array.get(bearSizeArr, last) +
+             array.get(bearLocationArr, last) +
+             array.get(bearLegArr, last) +
+             array.get(bearDominantArr, last) +
+             array.get(bearAngleBoostArr, last) +
+             array.get(bearAngleClimaxArr, last) +
+             array.get(bearWeakArr, last) +
+             array.get(bearRejectArr, last) +
+             array.get(bearIBSArr, last) +
+             array.get(bearRangePenaltyArr, last) +
+             array.get(bearRangeQualityArr, last) +
+             array.get(bearFTArr, last)
+         )
+
+plot(bearHidden, title="Bear Hidden Penalties", display=display.data_window)
 
 // ===== ALERTS USING alert() INSTEAD =====
 
@@ -1591,5 +1660,4 @@ plot(bearScoreSignal - (
 
 //if isL2 and barstate.isconfirmed
     //alert(buildMessage("L2 Sell"), alert.freq_once_per_bar_close)
-
 
