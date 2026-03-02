@@ -419,6 +419,23 @@ strongBearBreakout = bearBreakout and bearTrendStrength
 var label[] bullLabels = array.new_label()
 var label[] bearLabels = array.new_label()
 
+// FOLLOW THROUGH STORAGE V2
+
+
+var int[] bullSignalIndices = array.new_int()
+var int[] bearSignalIndices = array.new_int()
+
+var int[] bullSignalScores = array.new_int()
+var int[] bearSignalScores = array.new_int()
+
+var float[] bullSignalProbs = array.new_float()
+var float[] bearSignalProbs = array.new_float()
+
+var string[] bullSignalGrades = array.new_string()
+var string[] bearSignalGrades = array.new_string()
+
+//-------------------------------------------------
+
 var bool pulledBackFromHigh = true
 var bool pulledBackFromLow  = true
 
@@ -1033,6 +1050,10 @@ if barstate.isconfirmed
                  size=labelSize)
 
             array.push(bullLabels, newBullLabel)
+            array.push(bullSignalIndices, bullSignalBarIndex)
+            array.push(bullSignalScores, bullScoreSignal)
+            array.push(bullSignalProbs, bullProbSignal)
+            array.push(bullSignalGrades, bullGradeSignal)
 
         // Delete older labels if Show Only Most Recent enabled
             if showOnlyRecentBull and array.size(bullLabels) > 1
@@ -1134,6 +1155,10 @@ if not na(bullSignalBarIndex)
                  size=labelSize)
 
             array.push(bearLabels, newBearLabel)
+            array.push(bearSignalIndices, bearSignalBarIndex)
+            array.push(bearSignalScores, bearScoreSignal)
+            array.push(bearSignalProbs, bearProbSignal)
+            array.push(bearSignalGrades, bearGradeSignal)
 
             if showOnlyRecentBear and array.size(bearLabels) > 1
                 label.delete(array.shift(bearLabels))
@@ -1177,114 +1202,135 @@ if not na(bearSignalBarIndex)
 
 
 // =====================================
-// FOLLOW THROUGH ENGINE V1 (CORRECT)
+// FOLLOW THROUGH ENGINE V2
 // =====================================
 
 if barstate.isconfirmed
 
-    // -------------------------
-    // BULL FOLLOW THROUGH
-    // -------------------------
+    // -------- BULL FOLLOW THROUGH --------
 
-    if not na(bullSignalBarIndex) and not bullFTProcessed
+    for i = 0 to array.size(bullSignalIndices) - 1
 
-        if bar_index == bullSignalBarIndex + 1
+        signalIndex = array.get(bullSignalIndices, i)
+
+        if bar_index == signalIndex + 1
+
+            labelRef = array.get(bullLabels, i)
+
+            score = array.get(bullSignalScores, i)
+
+            barRangeFT = high - low
 
             ftScore = 0
 
-            ftBullBar = close > open
-            ftBearBar = close < open
-
-            barRangeFT = high - low
-            strongClose = close >= high - barRangeFT * 0.25
-            weakBar = math.abs(close - open) <= barRangeFT * 0.30
-
-            if ftBullBar and strongClose
+            if close > open and close >= high - barRangeFT * 0.25
                 ftScore := 2
-
-            else if weakBar
+            else if math.abs(close - open) <= barRangeFT * 0.30
                 ftScore := -1
-
-            else if ftBearBar
+            else if close < open
                 ftScore := -3
 
-            bullFollowThroughScore := ftScore
+            score += ftScore
 
-            // Apply to frozen score
-            bullScoreSignal += ftScore
-
-            // Recalculate probability
-            bullProbSignal :=
-                 bullScoreSignal >= 9 ? 90 :
-                 bullScoreSignal == 8 ? 86 :
-                 bullScoreSignal == 7 ? 82 :
-                 bullScoreSignal == 6 ? 78 :
-                 bullScoreSignal == 5 ? 72 :
-                 bullScoreSignal == 4 ? 65 :
-                 bullScoreSignal == 3 ? 58 :
-                 bullScoreSignal == 2 ? 52 :
+            prob =
+                 score >= 9 ? 90 :
+                 score == 8 ? 86 :
+                 score == 7 ? 82 :
+                 score == 6 ? 78 :
+                 score == 5 ? 72 :
+                 score == 4 ? 65 :
+                 score == 3 ? 58 :
+                 score == 2 ? 52 :
                  45
 
-            // Recalculate grade
-            bullGradeSignal :=
-                 bullScoreSignal >= 8 ? "A+" :
-                 bullScoreSignal >= 6 ? "A" :
-                 bullScoreSignal >= 5 ? "B" :
-                 bullScoreSignal >= 3 ? "C" :
+            prob := math.max(40, math.min(prob, 90))
+
+            grade =
+                 score >= 8 ? "A+" :
+                 score >= 6 ? "A" :
+                 score >= 5 ? "B" :
+                 score >= 3 ? "C" :
                  "D"
 
-            bullFTProcessed := true
+            label.delete(labelRef)
+
+            newLabel =
+             label.new(
+             signalIndex,
+             low[1],
+             "H " + grade + " " + str.tostring(prob) + "%",
+             style=label.style_label_up,
+             color=color.new(color.blue, opacity),
+             textcolor=color.white,
+             size=labelSize)
+
+            array.set(bullLabels, i, newLabel)
+            array.set(bullSignalScores, i, score)
+            array.set(bullSignalProbs, i, prob)
+            array.set(bullSignalGrades, i, grade)
 
 
-    // -------------------------
-    // BEAR FOLLOW THROUGH
-    // -------------------------
+    // -------- BEAR FOLLOW THROUGH --------
 
-    if not na(bearSignalBarIndex) and not bearFTProcessed
+    for i = 0 to array.size(bearSignalIndices) - 1
 
-        if bar_index == bearSignalBarIndex + 1
+        signalIndex = array.get(bearSignalIndices, i)
+
+        if bar_index == signalIndex + 1
+
+            labelRef = array.get(bearLabels, i)
+
+            score = array.get(bearSignalScores, i)
+
+            barRangeFT = high - low
 
             ftScore = 0
 
-            ftBearBar = close < open
-            ftBullBar = close > open
-
-            barRangeFT = high - low
-            strongClose = close <= low + barRangeFT * 0.25
-            weakBar = math.abs(close - open) <= barRangeFT * 0.30
-
-            if ftBearBar and strongClose
+            if close < open and close <= low + barRangeFT * 0.25
                 ftScore := 2
-
-            else if weakBar
+            else if math.abs(close - open) <= barRangeFT * 0.30
                 ftScore := -1
-
-            else if ftBullBar
+            else if close > open
                 ftScore := -3
 
-            bearFollowThroughScore := ftScore
+            score += ftScore
 
-            bearScoreSignal += ftScore
-
-            bearProbSignal :=
-                 bearScoreSignal >= 9 ? 90 :
-                 bearScoreSignal == 8 ? 86 :
-                 bearScoreSignal == 7 ? 82 :
-                 bearScoreSignal == 6 ? 78 :
-                 bearScoreSignal == 5 ? 72 :
-                 bearScoreSignal == 4 ? 65 :
-                 bearScoreSignal == 3 ? 58 :
-                 bearScoreSignal == 2 ? 52 :
+            prob =
+                 score >= 9 ? 90 :
+                 score == 8 ? 86 :
+                 score == 7 ? 82 :
+                 score == 6 ? 78 :
+                 score == 5 ? 72 :
+                 score == 4 ? 65 :
+                 score == 3 ? 58 :
+                 score == 2 ? 52 :
                  45
 
-            bearGradeSignal :=
-                 bearScoreSignal >= 8 ? "A+" :
-                 bearScoreSignal >= 6 ? "A" :
-                 bearScoreSignal >= 5 ? "B" :
-                 bearScoreSignal >= 3 ? "C" :
+            prob := math.max(40, math.min(prob, 90))
+
+            grade =
+                 score >= 8 ? "A+" :
+                 score >= 6 ? "A" :
+                 score >= 5 ? "B" :
+                 score >= 3 ? "C" :
                  "D"
 
-            bearFTProcessed := true
+            label.delete(labelRef)
+
+            newLabel =
+             label.new(
+             signalIndex,
+             high[1],
+             "L " + grade + " " + str.tostring(prob) + "%",
+             style=label.style_label_down,
+             color=color.new(color.red, opacity),
+             textcolor=color.white,
+             size=labelSize)
+
+            array.set(bearLabels, i, newLabel)
+            array.set(bearSignalScores, i, score)
+            array.set(bearSignalProbs, i, prob)
+            array.set(bearSignalGrades, i, grade)
 
 // ---------- Reset markers ----------
 
