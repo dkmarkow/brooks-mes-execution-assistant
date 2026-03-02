@@ -507,6 +507,9 @@ var int bearFollowThroughScore = 0
 var bool bullFTProcessed = false
 var bool bearFTProcessed = false
 
+var float[] bullSignalPrices = array.new_float()
+var float[] bearSignalPrices = array.new_float()
+
 // ---------- CANDIDATE SIGNAL SYSTEM ----------
 
 // Candidate labels
@@ -1050,6 +1053,7 @@ if barstate.isconfirmed
                  size=labelSize)
 
             array.push(bullLabels, newBullLabel)
+            array.push(bullSignalPrices, low[1])
             array.push(bullSignalIndices, bullSignalBarIndex)
             array.push(bullSignalScores, bullScoreSignal)
             array.push(bullSignalProbs, bullProbSignal)
@@ -1062,6 +1066,7 @@ if barstate.isconfirmed
                 array.shift(bullSignalScores)
                 array.shift(bullSignalProbs)
                 array.shift(bullSignalGrades)
+                array.shift(bullSignalPrices)
              
 // BULL FOLLOW THROUGH EVALUATION
 
@@ -1159,6 +1164,7 @@ if not na(bullSignalBarIndex)
                  size=labelSize)
 
             array.push(bearLabels, newBearLabel)
+            array.push(bearSignalPrices, high[1])
             array.push(bearSignalIndices, bearSignalBarIndex)
             array.push(bearSignalScores, bearScoreSignal)
             array.push(bearSignalProbs, bearProbSignal)
@@ -1170,6 +1176,7 @@ if not na(bullSignalBarIndex)
                 array.shift(bearSignalScores)
                 array.shift(bearSignalProbs)
                 array.shift(bearSignalGrades)
+                array.shift(bearSignalPrices)
 
 
 // BEAR FOLLOW THROUGH EVALUATION
@@ -1262,10 +1269,12 @@ if barstate.isconfirmed
 
             label.delete(labelRef)
 
+            price = array.get(bullSignalPrices, i)
+
             newLabel =
              label.new(
              signalIndex,
-             low[1],
+             price,
              "H " + grade + " " + str.tostring(prob) + "%",
              style=label.style_label_up,
              color=color.new(color.blue, opacity),
@@ -1325,10 +1334,12 @@ if barstate.isconfirmed
 
             label.delete(labelRef)
 
+            price = array.get(bearSignalPrices, i)
+
             newLabel =
              label.new(
              signalIndex,
-             high[1],
+             price,
              "L " + grade + " " + str.tostring(prob) + "%",
              style=label.style_label_down,
              color=color.new(color.red, opacity),
