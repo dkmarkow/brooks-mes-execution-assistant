@@ -1519,6 +1519,8 @@ plot(bullScore_rangePenalty_sig, "Bull Range Penalty", display=display.data_wind
 plot(bullScore_reject_sig, "Bull EMA Reject", display=display.data_window)
 plot(bullScore_ibs_sig, "Bull IBS", display=display.data_window)
 plot(bullScore_followThrough_sig, "Bull Follow Through", display=display.data_window)
+plot(array.size(bullSignalScores) > 0 ? array.get(bullSignalScores, array.size(bullSignalScores)-1) : na, "Bull Score (with FT)", display=display.data_window)
+
 
 
 // =====================================
@@ -1540,6 +1542,9 @@ plot(bearScore_rangePenalty_sig, "Bear Range Penalty", display=display.data_wind
 plot(bearScore_reject_sig, "Bear EMA Reject", display=display.data_window)
 plot(bearScore_ibs_sig, "Bear IBS", display=display.data_window)
 plot(bearScore_followThrough_sig, "Bear Follow Through", display=display.data_window)
+plot(bearScore_followThrough_sig, "Bear Follow Through", display=display.data_window)
+plot(array.size(bearSignalScores) > 0 ? array.get(bearSignalScores, array.size(bearSignalScores)-1) : na, "Bear Score (with FT)", display=display.data_window)
+
 
 
 plot(bullScoreSignal, title="SIGNAL Bull Score", display=display.data_window)
