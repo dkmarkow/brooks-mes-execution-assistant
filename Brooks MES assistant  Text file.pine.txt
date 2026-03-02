@@ -1058,6 +1058,10 @@ if barstate.isconfirmed
         // Delete older labels if Show Only Most Recent enabled
             if showOnlyRecentBull and array.size(bullLabels) > 1
                 label.delete(array.shift(bullLabels))
+                array.shift(bullSignalIndices)
+                array.shift(bullSignalScores)
+                array.shift(bullSignalProbs)
+                array.shift(bullSignalGrades)
              
 // BULL FOLLOW THROUGH EVALUATION
 
@@ -1162,6 +1166,10 @@ if not na(bullSignalBarIndex)
 
             if showOnlyRecentBear and array.size(bearLabels) > 1
                 label.delete(array.shift(bearLabels))
+                array.shift(bearSignalIndices)
+                array.shift(bearSignalScores)
+                array.shift(bearSignalProbs)
+                array.shift(bearSignalGrades)
 
 
 // BEAR FOLLOW THROUGH EVALUATION
@@ -1209,7 +1217,7 @@ if barstate.isconfirmed
 
     // -------- BULL FOLLOW THROUGH --------
 
-    for i = 0 to array.size(bullSignalIndices) - 1
+    for i = 0 to math.min(array.size(bullSignalIndices), array.size(bullLabels)) - 1
 
         signalIndex = array.get(bullSignalIndices, i)
 
@@ -1272,7 +1280,7 @@ if barstate.isconfirmed
 
     // -------- BEAR FOLLOW THROUGH --------
 
-    for i = 0 to array.size(bearSignalIndices) - 1
+    for i = 0 to math.min(array.size(bearSignalIndices), array.size(bearLabels)) - 1
 
         signalIndex = array.get(bearSignalIndices, i)
 
