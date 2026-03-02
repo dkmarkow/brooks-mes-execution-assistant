@@ -459,10 +459,7 @@ var int bullScore_reject_sig = na
 var int bullScore_ibs_sig = na
 
 
-// FOLLOW THROUGH ENGINE
 
-var int bullScore_followThrough_sig = na
-var int bearScore_followThrough_sig = na
 
 // =====================================
 // FROZEN BEAR SCORE COMPONENTS
@@ -480,6 +477,18 @@ var int bearScore_weakPenalty_sig = na
 var int bearScore_rangePenalty_sig = na
 var int bearScore_reject_sig = na
 var int bearScore_ibs_sig = na
+
+
+// FOLLOW THROUGH ENGINE STORAGE
+
+var int bullScore_followThrough_sig = na
+var int bearScore_followThrough_sig = na
+
+var int bullFollowThroughScore = 0
+var int bearFollowThroughScore = 0
+
+var bool bullFTProcessed = false
+var bool bearFTProcessed = false
 
 // ---------- CANDIDATE SIGNAL SYSTEM ----------
 
@@ -991,6 +1000,7 @@ if barstate.isconfirmed
         bullScore_rangePenalty_sig := bullScore_rangePenalty
         bullScore_reject_sig := bullScore_reject
         bullScore_ibs_sig := bullScore_ibs
+        bullFTProcessed := false
 
         // Remove candidate label
         label.delete(bullCandidateLabel)
@@ -1030,7 +1040,6 @@ if barstate.isconfirmed
              
 // BULL FOLLOW THROUGH EVALUATION
 
-bullFollowThroughScore = 0
 
 // Only evaluate if signal exists
 if not na(bullSignalBarIndex)
@@ -1093,6 +1102,7 @@ if not na(bullSignalBarIndex)
         bearScore_rangePenalty_sig := bearScore_rangePenalty
         bearScore_reject_sig := bearScore_reject
         bearScore_ibs_sig := bearScore_ibs
+        bearFTProcessed := false
 
         label.delete(bearCandidateLabel)
 
@@ -1132,8 +1142,6 @@ if not na(bullSignalBarIndex)
 // BEAR FOLLOW THROUGH EVALUATION
 
 
-bearFollowThroughScore = 0
-
 if not na(bearSignalBarIndex)
 
     ftBarIndex = bearSignalBarIndex + 1
@@ -1168,6 +1176,115 @@ if not na(bearSignalBarIndex)
         bearScore_followThrough_sig := bearFollowThroughScore
 
 
+// =====================================
+// FOLLOW THROUGH ENGINE V1 (CORRECT)
+// =====================================
+
+if barstate.isconfirmed
+
+    // -------------------------
+    // BULL FOLLOW THROUGH
+    // -------------------------
+
+    if not na(bullSignalBarIndex) and not bullFTProcessed
+
+        if bar_index == bullSignalBarIndex + 1
+
+            ftScore = 0
+
+            ftBullBar = close > open
+            ftBearBar = close < open
+
+            barRangeFT = high - low
+            strongClose = close >= high - barRangeFT * 0.25
+            weakBar = math.abs(close - open) <= barRangeFT * 0.30
+
+            if ftBullBar and strongClose
+                ftScore := 2
+
+            else if weakBar
+                ftScore := -1
+
+            else if ftBearBar
+                ftScore := -3
+
+            bullFollowThroughScore := ftScore
+
+            // Apply to frozen score
+            bullScoreSignal += ftScore
+
+            // Recalculate probability
+            bullProbSignal :=
+                 bullScoreSignal >= 9 ? 90 :
+                 bullScoreSignal == 8 ? 86 :
+                 bullScoreSignal == 7 ? 82 :
+                 bullScoreSignal == 6 ? 78 :
+                 bullScoreSignal == 5 ? 72 :
+                 bullScoreSignal == 4 ? 65 :
+                 bullScoreSignal == 3 ? 58 :
+                 bullScoreSignal == 2 ? 52 :
+                 45
+
+            // Recalculate grade
+            bullGradeSignal :=
+                 bullScoreSignal >= 8 ? "A+" :
+                 bullScoreSignal >= 6 ? "A" :
+                 bullScoreSignal >= 5 ? "B" :
+                 bullScoreSignal >= 3 ? "C" :
+                 "D"
+
+            bullFTProcessed := true
+
+
+    // -------------------------
+    // BEAR FOLLOW THROUGH
+    // -------------------------
+
+    if not na(bearSignalBarIndex) and not bearFTProcessed
+
+        if bar_index == bearSignalBarIndex + 1
+
+            ftScore = 0
+
+            ftBearBar = close < open
+            ftBullBar = close > open
+
+            barRangeFT = high - low
+            strongClose = close <= low + barRangeFT * 0.25
+            weakBar = math.abs(close - open) <= barRangeFT * 0.30
+
+            if ftBearBar and strongClose
+                ftScore := 2
+
+            else if weakBar
+                ftScore := -1
+
+            else if ftBullBar
+                ftScore := -3
+
+            bearFollowThroughScore := ftScore
+
+            bearScoreSignal += ftScore
+
+            bearProbSignal :=
+                 bearScoreSignal >= 9 ? 90 :
+                 bearScoreSignal == 8 ? 86 :
+                 bearScoreSignal == 7 ? 82 :
+                 bearScoreSignal == 6 ? 78 :
+                 bearScoreSignal == 5 ? 72 :
+                 bearScoreSignal == 4 ? 65 :
+                 bearScoreSignal == 3 ? 58 :
+                 bearScoreSignal == 2 ? 52 :
+                 45
+
+            bearGradeSignal :=
+                 bearScoreSignal >= 8 ? "A+" :
+                 bearScoreSignal >= 6 ? "A" :
+                 bearScoreSignal >= 5 ? "B" :
+                 bearScoreSignal >= 3 ? "C" :
+                 "D"
+
+            bearFTProcessed := true
 
 // ---------- Reset markers ----------
 
@@ -1383,4 +1500,5 @@ plot(bullScoreSignal - (
 
 //if isL2 and barstate.isconfirmed
     //alert(buildMessage("L2 Sell"), alert.freq_once_per_bar_close)
+
 
